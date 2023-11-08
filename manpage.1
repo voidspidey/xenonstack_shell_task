@@ -1,0 +1,71 @@
+.TH internsctl 1 internsctl-1.0.0
+.SH NAME
+internsctl - script to manage linux machines/VMs allocated to interns.
+.SH SYNOPSIS
+.B internsctl SUBCOMMAND [OPTIONS] ARGUMENTS
+.SH DESCRIPTION
+internsctl is a versatile shell scripts which effectively allows its user to
+manage systems dedicated to software engineering interns. Its consists of four
+subcommmands/modes, namely, cpu, memory, user and file. The latter two have
+multiple applications.
+.P
+cpu and memory subcommands allow the user to query information about cpu and
+core memory respectively.
+.P
+user subcommand handles creation of new users. It immediately prompts for a
+account password upon successful creation of the user accounts. It can also
+list all non-system user accounts on the system. Users with admin priveleges
+can also particularly queried using an option.
+.P
+file subcommmand prints metadata on the file with the given filename. It can
+be used to print only a specific attribute.
+.SH SUBCOMMANDS
+.B cpu
+        Get information about the machine/VM's cpu.
+
+.B memory
+        Get information about the machine/VM's memory.
+    
+.B user
+        Manage user account created for interns.
+
+.B file    
+        Get info about a file given its filename.
+
+.SH USAGE
+.B internsctl [--help|--version]
+
+.B internsctl cpu getinfo
+
+.B internsctl memory getinfo
+
+.B internsctl user create <username>
+
+.B internsctl user list [--sudo-only]
+
+.B internsctl file getinfo [OPTION] <filename>
+.SH Options
+.B --help       Print this help message.
+
+.B --version    Print the scripts's version. (Format: MAJOR.MINOR.PATCH)
+.SS With "user list",
+.B --sudo-only         List only the users with sudo priveleges.
+.SS With "file getinfo",
+.B --permissions       Output only the mode with rwx permission information.
+
+.B --last-modified     Output only the last modification date.
+
+.B --owner             Output only the username of the owner of the file.
+
+.B --size              Output only the size (in bytes) of the file.
+.SH DEPS
+.BR bash (1),
+.BR lscpu (1),
+.BR free (1),
+.BR sudo (1),
+.BR awk (1),
+.BR cut (1),
+.BR tr (1),
+.BR useradd (1)
+.SH ISSUES
+Open issues at https://github.com/voidspidey/xenonstack_shell_task/issues
