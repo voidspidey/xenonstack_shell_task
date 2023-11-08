@@ -9,6 +9,7 @@
 #   - free
 
 set -euo pipefail
+version=1.0.0
 
 showhelp() {
     cat << EOM
@@ -30,8 +31,12 @@ SUBCOMMANDS
             Usage: internsctl file getinfo <filename>
 
 OPTIONS
+    --help              Print this help message.
+    --version           Print the scripts's version. (Format: MAJOR.MINOR.PATCH)
+
     "user list" options
         --sudo-only         List only the users with sudo priveleges.
+
     "file getinfo" options
         --permissions       Output only the mode with rwx permission information.
         --last-modified     Output only the last modification date.
@@ -59,8 +64,8 @@ user() {
             [ "$#" -eq 0 ] && die 'Username not specified.'
             username="$1"
             sudo useradd -d "/home/$username" -m -s /bin/bash "$username"
-	    echo 'Set password for new user.'
-	    sudo passwd "$username"
+            echo 'Set password for new user.'
+            sudo passwd "$username"
             ;;
         "list")
             shift
@@ -117,6 +122,7 @@ EOM
 
 [ "$#" -eq 0 ] && die 'Nothing to do.'
 [ "$1" = '--help' ] && showhelp
+[ "$1" = '--version' ] && echo "$version" && exit 0
 
 case "$1" in
     "cpu")
