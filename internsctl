@@ -58,7 +58,9 @@ user() {
             shift
             [ "$#" -eq 0 ] && die 'Username not specified.'
             username="$1"
-            sudo useradd -d "/home/$username" -m -s /usr/bin/bash "$username"
+            sudo useradd -d "/home/$username" -m -s /bin/bash "$username"
+	    echo 'Set password for new user.'
+	    sudo passwd "$username"
             ;;
         "list")
             shift
