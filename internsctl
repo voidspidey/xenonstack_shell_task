@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# Dependencies:
+#   - bash >= 4.4.12
+#   - awk
+#   - useradd (to add new user accounts)
+#   - sudo (to elevate priveleges when creating new user accounts)
+#   - coreutils (grep, tr, cut, sort, uniq)
+#   - lscpu
+#   - free
+
+set -euo pipefail
+
+showhelp() {
+    cat << EOM
+A script to manage linux machines allocated to interns.
+Usage: internsctl SUBCOMMAND [OPTIONS] ARGUMENTS
+
+SUBCOMMANDS
+    cpu     Get information about the machine/VM's cpu.
+            Usage: internsctl cpu getinfo
+
+    memory  Get information about the machine/VM's memory.
+            Usage: internsctl memory getinfo
+    
+    user    Manage user account created for interns.
+            Usage: internsctl user create <username>
+                   internsctl user list
+
+    file    Get info about a file given its filename.
+            Usage: internsctl file getinfo <filename>
+
+OPTIONS
+    "user list" options
+        --sudo-only         List only the users with sudo priveleges.
+    "file getinfo" options
+        --permissions       Output only the mode with rwx permission information.
+        --last-modified     Output only the last modification date.
+        --owner             Output only the username of the owner of the file.
+        --size              Output only the size (in bytes) of the file.
+EOM
+    exit 1  
+}
+
+die() {
+    [ "$#" -eq 0 ] && msg='Invalid Usage !!' || msg="$1"
+
+    cat << EOM
+$msg
+Execute "$(basename "$0") --help" to see usage instructions.
+EOM
+
+    exit 1
+}
+
+user() {
+    case "$1" in
+        "create")
+            shift
+            [ "$#" -eq 0 ] && die 'Username not specified.'
+            username="$1"
+            sudo useradd -d "/home/$username" -m -s /usr/bin/bash "$username"
+            ;;
+        "list")
+            shift
+            if [ "$#" -eq 0 ]; then
+                awk -F':' '{if ($1 != "nobody" && $3 > 999) print $1;}' /etc/passwd
+            elif [ "$#" -eq 1 -a "$1" = "--sudo-only" ]; then
+                grep '^sudo\|^wheel' /etc/group | cut -d ':' -f 4 | tr ',' '\n' | sort | uniq
+            else
+                die 'Invalid usage of "user" subcommand.'
+            fi
+            ;;
+        *)
+            die "Invalid operation '$1' for 'user' subcommand."
+            ;;
+    esac
+}
+
+file() {
+    [ "$1" != 'getinfo' ] && die "Invalid operation '$1' for file"
+    shift
+    [ "$#" -eq 0 ] && die 'Missing filename.'
+
+    for last; do true; done
+    filename="$last"
+
+    [ ! -f "$filename" ] && die 'File not found.'
+    modify_time="$(date -r "$filename" +"%F %T %z")"
+
+    declare -a fileinfo
+    readarray -t fileinfo <<< "$(ls -l "$filename" | tr ' ' '\n')"
+
+    access_idx=0
+    owner_idx=2
+    size_idx=4
+
+    if [ "$#" -eq 1 ]; then
+        cat << EOM
+   File:    $filename
+ Access:    ${fileinfo[access_idx]}
+Size(B):    ${fileinfo[size_idx]}
+  Owner:    ${fileinfo[owner_idx]}
+ Modify:    $modify_time
+EOM
+        exit 0
+    fi
+
+    case "$1" in
+        "--permissions") echo "${fileinfo[access_idx]}" ;;
+        "--size") echo "${fileinfo[size_idx]}" ;;
+        "--owner") echo "${fileinfo[owner_idx]}" ;;
+        "--last-modified") echo "$modify_time" ;;
+    esac
+}
+
+[ "$#" -eq 0 ] && die 'Nothing to do.'
+[ "$1" = '--help' ] && showhelp
+
+case "$1" in
+    "cpu")
+        shift
+        [ "$#" -eq 0 ] && die 'Subcommand "cpu" requires further parameters.'
+        [ "$1" != 'getinfo' ] && die "Invalid operation '$1' for subcommmand 'cpu'." && exit 1
+        lscpu
+        ;;
+    "memory")
+        shift
+        [ "$#" -eq 0 ] && die 'Subcommand "memory" requires further parameters.'
+        [ "$1" != 'getinfo' ] && die "Invalid operation '$1' for subcommand 'memory'." && exit 1
+        free
+        ;;
+    "user")
+        shift
+        [ "$#" -eq 0 ] && die 'Subcommand "user" requires further parameters.'
+        user "$@"
+        ;;
+    "file")
+        shift
+        [ "$#" -eq 0 ] && die 'Subcommand "file" requires further parameters.'
+        file "$@"
+        ;;
+    *)
+        die 'Invalid subcommand.'
+        ;;
+esac
+exit 0
